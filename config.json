@@ -1,0 +1,16 @@
+{
+  "syncInterval": "10m",
+  "log": "/tmp/gitlab-mattermost-sync.log",
+  "gitlab": {
+    "api": "",
+    "private_token": "",
+    "oauth_token": ""
+  },
+  "mattermost": {
+    "api": "",
+    "private_token": "",
+    "username": "",
+    "password": ""
+  },
+  "cleanup_mattermost": true
+}
