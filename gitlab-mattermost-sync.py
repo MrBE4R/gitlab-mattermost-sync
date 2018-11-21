@@ -5,6 +5,7 @@ import gitlab
 import sys
 import json
 from mattermostdriver import Driver as mtd
+from time import sleep
 
 if __name__ == "__main__":
     print('Initializing gitlab-ldap-sync.')
@@ -77,11 +78,11 @@ if __name__ == "__main__":
         print('Getting all groups from GitLab.')
         gitlab_groups = []
         gitlab_groups_names = []
-        for group in gl.groups.list():
+        for group in gl.groups.list(all=True):
             gitlab_groups_names.append(group.full_name.split('/')[len(group.full_name.split('/')) - 1].strip())
             gitlab_group = {"name": group.full_name.split('/')[len(group.full_name.split('/')) - 1].strip(),
                             "members": []}
-            for member in group.members.list():
+            for member in group.members.list(all=True):
                 user = gl.users.get(member.id)
                 gitlab_group['members'].append(user.username)
             gitlab_groups.append(gitlab_group)
@@ -90,10 +91,10 @@ if __name__ == "__main__":
         print('Getting all projects from GitLab.')
         gitlab_projects = []
         gitlab_projects_names = []
-        for project in gl.projects.list():
+        for project in gl.projects.list(all=True):
             gitlab_projects_names.append(project.name.split('/')[len(project.name.split('/')) - 1].strip())
             gitlab_project = {"name": project.name.split('/')[len(project.name.split('/')) - 1].strip(), "members": []}
-            for member in project.members.list():
+            for member in project.members.list(all=True):
                 user = gl.users.get(member.id)
                 gitlab_project['members'].append(user.username)
             gitlab_projects.append(gitlab_project)
@@ -138,11 +139,19 @@ if __name__ == "__main__":
 
             for g_member in g_group['members']:
                 if g_member not in mattermost_groups[mattermost_groups_names.index(g_group['name'])]['members']:
+                    u = []
                     print('|  |  |- User %s present in GitLab but not in Mattermost, updating Mattermost' % g_member)
-                    u = mt.users.get_user_by_username(username=g_member)
-                    mt.teams.add_user_to_team(team_id=g['id'], options={'team_id': g['id'], 'user_id': u['id']})
+                    if str(g_member):
+                        u = mt.users.search_users({'term': str(g_member)})
+                    if len(u) > 0:
+                        u = mt.users.get_user_by_username(username=g_member)
+                        mt.teams.add_user_to_team(team_id=g['id'], options={'team_id': g['id'], 'user_id': u['id']})
+                    else:
+                        print('|  |  |  |- User %s does not have a mattermost account, skipping.' % g_member)
                 else:
                     print('|  |  |- User %s present in GitLab and Mattermost, skipping' % g_member)
+                sleep(0.3)
+
             print('|- Done')
         print('Done.')
 
@@ -187,9 +196,12 @@ if __name__ == "__main__":
                 print('|- Workgin on %s.' % m_group['name'])
                 if m_group['name'] not in gitlab_groups_names:
                     if m_group['name'] not in gitlab_projects_names:
-                        print('|  |  |- Project or group %s not present in GitLab, is this an error? Skipping.' % m_group['name'])
+                        print(
+                            '|  |  |- Project or group %s not present in GitLab, is this an error? Skipping.' % m_group[
+                                'name'])
                     else:
-                        g = mt.teams.get_team_by_name(name=''.join([s for s in m_group['name'] if str.isalnum(s)]).lower())
+                        g = mt.teams.get_team_by_name(
+                            name=''.join([s for s in m_group['name'] if str.isalnum(s)]).lower())
                         for m_member in m_group['members']:
                             if m_member not in gitlab_projects[gitlab_projects_names.index(m_group['name'])]['members']:
                                 print(
