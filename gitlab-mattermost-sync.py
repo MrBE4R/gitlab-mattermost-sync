@@ -196,16 +196,13 @@ if __name__ == "__main__":
                 print('|- Workgin on %s.' % m_group['name'])
                 if m_group['name'] not in gitlab_groups_names:
                     if m_group['name'] not in gitlab_projects_names:
-                        print(
-                            '|  |  |- Project or group %s not present in GitLab, is this an error? Skipping.' % m_group[
-                                'name'])
+                        print('|  |  |- Project or group %s not present in GitLab, is this an error? Skipping.' % m_group['name'])
                     else:
                         g = mt.teams.get_team_by_name(
                             name=''.join([s for s in m_group['name'] if str.isalnum(s)]).lower())
                         for m_member in m_group['members']:
                             if m_member not in gitlab_projects[gitlab_projects_names.index(m_group['name'])]['members']:
-                                print(
-                                    '|  |  |- User %s present in Mattermost but not in GitLab, updating Mattermost' % m_member)
+                                print('|  |  |- User %s present in Mattermost but not in GitLab, updating Mattermost' % m_member)
                                 u = mt.users.get_user_by_username(username=m_member)
                                 mt.teams.remove_user_from_team(team_id=g['id'], user_id=u['id'])
                             else:
@@ -214,8 +211,7 @@ if __name__ == "__main__":
                     g = mt.teams.get_team_by_name(name=''.join([s for s in m_group['name'] if str.isalnum(s)]).lower())
                     for m_member in m_group['members']:
                         if m_member not in gitlab_groups[gitlab_groups_names.index(m_group['name'])]['members']:
-                            print(
-                                '|  |  |- User %s present in Mattermost but not in GitLab, updating Mattermost' % m_member)
+                            print('|  |  |- User %s present in Mattermost but not in GitLab, updating Mattermost' % m_member)
                             u = mt.users.get_user_by_username(username=m_member)
                             mt.teams.remove_user_from_team(team_id=g['id'], user_id=u['id'])
                         else:
