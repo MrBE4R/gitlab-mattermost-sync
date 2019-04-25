@@ -80,8 +80,7 @@ if __name__ == "__main__":
         gitlab_groups_names = []
         for group in gl.groups.list(all=True):
             gitlab_groups_names.append(group.full_name.split('/')[len(group.full_name.split('/')) - 1].strip())
-            gitlab_group = {"name": group.full_name.split('/')[len(group.full_name.split('/')) - 1].strip(),
-                            "members": []}
+            gitlab_group = {"name": group.full_name.split('/')[len(group.full_name.split('/')) - 1].strip(), "members": []}
             for member in group.members.list(all=True):
                 user = gl.users.get(member.id)
                 gitlab_group['members'].append(user.username)
@@ -179,14 +178,20 @@ if __name__ == "__main__":
             else:
                 print('|  |- %s already not exist in Mattermost, skipping creation.' % g_project['name'])
                 g = mt.teams.get_team_by_name(name=''.join([s for s in g_project['name'] if str.isalnum(s)]).lower())
-
             for g_member in g_project['members']:
                 if g_member not in mattermost_groups[mattermost_groups_names.index(g_project['name'])]['members']:
+                    u = []
                     print('|  |  |- User %s present in GitLab but not in Mattermost, updating Mattermost' % g_member)
-                    u = mt.users.get_user_by_username(username=g_member)
-                    mt.teams.add_user_to_team(team_id=g['id'], options={'team_id': g['id'], 'user_id': u['id']})
+                    if str(g_member):
+                        u = mt.users.search_users({'term': str(g_member)})
+                    if len(u) > 0:
+                        u = mt.users.get_user_by_username(username=g_member)
+                        mt.teams.add_user_to_team(team_id=g['id'], options={'team_id': g['id'], 'user_id': u['id']})
+                    else:
+                        print('|  |  |  |- User %s does not have a mattermost account, skipping.' % g_member)
                 else:
                     print('|  |  |- User %s present in GitLab and Mattermost, skipping' % g_member)
+                sleep(0.3)
             print('|- Done')
         print('Done.')
 
@@ -198,8 +203,7 @@ if __name__ == "__main__":
                     if m_group['name'] not in gitlab_projects_names:
                         print('|  |  |- Project or group %s not present in GitLab, is this an error? Skipping.' % m_group['name'])
                     else:
-                        g = mt.teams.get_team_by_name(
-                            name=''.join([s for s in m_group['name'] if str.isalnum(s)]).lower())
+                        g = mt.teams.get_team_by_name(name=''.join([s for s in m_group['name'] if str.isalnum(s)]).lower())
                         for m_member in m_group['members']:
                             if m_member not in gitlab_projects[gitlab_projects_names.index(m_group['name'])]['members']:
                                 print('|  |  |- User %s present in Mattermost but not in GitLab, updating Mattermost' % m_member)
